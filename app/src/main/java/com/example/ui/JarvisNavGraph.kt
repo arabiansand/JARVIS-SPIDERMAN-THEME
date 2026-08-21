@@ -8,15 +8,33 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import com.example.ui.components.captureImage
+
 @Composable
 fun JarvisNavGraph(viewModel: JarvisViewModel = viewModel()) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val cameraController = rememberCameraController(context)
     
     val jarvisState by viewModel.jarvisState.collectAsState()
     val spokenText by viewModel.spokenText.collectAsState()
     val aiResponse by viewModel.aiResponse.collectAsState()
     val memories by viewModel.memory.collectAsState(initial = emptyList())
     val currentTheme by viewModel.currentTheme.collectAsState()
+    val networkStatus by viewModel.networkStatus.collectAsState()
+    
+    val visionModeEnabled by viewModel.visionModeEnabled.collectAsState()
+    val captureTrigger by viewModel.captureTrigger.collectAsState()
+
+    LaunchedEffect(captureTrigger) {
+        if (captureTrigger > 0 && visionModeEnabled) {
+            captureImage(context, cameraController) { bitmap ->
+                viewModel.onImageCaptured(bitmap)
+            }
+        }
+    }
 
     NavHost(navController = navController, startDestination = "hud") {
         composable("hud") {
@@ -24,6 +42,9 @@ fun JarvisNavGraph(viewModel: JarvisViewModel = viewModel()) {
                 jarvisState = jarvisState,
                 spokenText = spokenText,
                 aiResponse = aiResponse,
+                visionModeEnabled = visionModeEnabled,
+                cameraController = cameraController,
+                onToggleVisionMode = { viewModel.toggleVisionMode() },
                 onMicClick = { viewModel.startListening() },
                 onOpenCommandCenter = { navController.navigate("command_center") }
             )
@@ -32,6 +53,7 @@ fun JarvisNavGraph(viewModel: JarvisViewModel = viewModel()) {
         composable("command_center") {
             CommandCenterScreen(
                 memories = memories,
+                networkStatus = networkStatus,
                 onClearMemory = { viewModel.clearMemory() },
                 onSettingsClick = { navController.navigate("settings") },
                 onBack = { navController.popBackStack() }

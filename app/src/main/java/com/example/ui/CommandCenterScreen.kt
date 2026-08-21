@@ -21,11 +21,13 @@ import com.example.data.CommandMemory
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.ui.components.GlassmorphicPanel
 import com.example.ui.components.HudAmbientBackground
+import com.example.util.NetworkStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommandCenterScreen(
     memories: List<CommandMemory>,
+    networkStatus: NetworkStatus = NetworkStatus.UNAVAILABLE,
     onClearMemory: () -> Unit,
     onSettingsClick: () -> Unit,
     onBack: () -> Unit
@@ -84,6 +86,17 @@ fun CommandCenterScreen(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(modifier = Modifier.weight(1f)) {
                         DiagnosticCard(title = "AI ENGINE", status = "ONLINE", color = primaryColor)
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        val netStatusStr = when(networkStatus) {
+                            NetworkStatus.WIFI -> "WIFI"
+                            NetworkStatus.CELLULAR -> "CELLULAR"
+                            NetworkStatus.AVAILABLE -> "CONNECTED"
+                            NetworkStatus.LOSING -> "WEAK"
+                            NetworkStatus.LOST, NetworkStatus.UNAVAILABLE -> "OFFLINE"
+                        }
+                        val netColor = if (networkStatus == NetworkStatus.UNAVAILABLE || networkStatus == NetworkStatus.LOST) secondaryColor else primaryColor
+                        DiagnosticCard(title = "NETWORK", status = netStatusStr, color = netColor)
                     }
                     Box(modifier = Modifier.weight(1f)) {
                         DiagnosticCard(title = "MEMORY", status = "${memories.size} logs", color = primaryColor)

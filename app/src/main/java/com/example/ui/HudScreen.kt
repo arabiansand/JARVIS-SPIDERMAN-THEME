@@ -39,14 +39,28 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.testTag
 
+import androidx.camera.view.LifecycleCameraController
+import com.example.ui.components.VisionCamera
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HudScreen(
     jarvisState: JarvisState,
     spokenText: String,
     aiResponse: String,
+    visionModeEnabled: Boolean = false,
+    cameraController: LifecycleCameraController? = null,
+    onToggleVisionMode: () -> Unit = {},
     onMicClick: () -> Unit,
     onOpenCommandCenter: () -> Unit
 ) {
+    val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
+
     val primaryColor = MaterialTheme.colorScheme.primary
     val secondaryColor = MaterialTheme.colorScheme.secondary
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
@@ -68,14 +82,18 @@ fun HudScreen(
             .fillMaxSize()
             .background(backgroundColor)
     ) {
-        // Ambient Futuristic Grid & Light Glows for Glassmorphic Depth
-        HudAmbientBackground(accentColor = activeAccentColor)
-
-        // Reactive Canvas-Based Glowing Particle Animation System
-        FuturisticParticleBackground(
-            jarvisState = jarvisState,
-            accentColor = activeAccentColor
-        )
+        if (visionModeEnabled && cameraPermissionState.status.isGranted && cameraController != null) {
+            VisionCamera(controller = cameraController)
+        } else {
+            // Ambient Futuristic Grid & Light Glows for Glassmorphic Depth
+            HudAmbientBackground(accentColor = activeAccentColor)
+    
+            // Reactive Canvas-Based Glowing Particle Animation System
+            FuturisticParticleBackground(
+                jarvisState = jarvisState,
+                accentColor = activeAccentColor
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -226,20 +244,44 @@ fun HudScreen(
                         )
                     }
                     
-                    FloatingActionButton(
-                        onClick = onMicClick,
-                        containerColor = if (jarvisState == JarvisState.LISTENING) secondaryColor else primaryColor,
-                        shape = CircleShape,
-                        modifier = Modifier
-                            .size(64.dp)
-                            .testTag("mic_fab_button")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Filled.Mic,
-                            contentDescription = "Listen",
-                            tint = backgroundColor,
-                            modifier = Modifier.size(32.dp)
-                        )
+                        FloatingActionButton(
+                            onClick = {
+                                if (!cameraPermissionState.status.isGranted) {
+                                    cameraPermissionState.launchPermissionRequest()
+                                }
+                                onToggleVisionMode()
+                            },
+                            containerColor = if (visionModeEnabled) secondaryColor else backgroundColor,
+                            contentColor = if (visionModeEnabled) backgroundColor else primaryColor,
+                            shape = CircleShape,
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Icon(
+                                if (visionModeEnabled) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                contentDescription = "Toggle Vision",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    
+                        FloatingActionButton(
+                            onClick = onMicClick,
+                            containerColor = if (jarvisState == JarvisState.LISTENING) secondaryColor else primaryColor,
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .testTag("mic_fab_button")
+                        ) {
+                            Icon(
+                                Icons.Filled.Mic,
+                                contentDescription = "Listen",
+                                tint = backgroundColor,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
                     }
                 }
             }
