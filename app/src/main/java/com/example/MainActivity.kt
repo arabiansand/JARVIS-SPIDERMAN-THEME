@@ -1,6 +1,7 @@
 package com.example
 
 import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,8 +18,7 @@ import com.example.ui.JarvisNavGraph
 import com.example.ui.JarvisViewModel
 import com.example.ui.theme.MyApplicationTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalPermissionsApi::class)
@@ -30,17 +30,22 @@ class MainActivity : ComponentActivity() {
             val currentTheme by viewModel.currentTheme.collectAsState()
 
             MyApplicationTheme(appTheme = currentTheme) {
-                val micPermissionState = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
+                val permissionsList = mutableListOf(Manifest.permission.RECORD_AUDIO)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    permissionsList.add(Manifest.permission.POST_NOTIFICATIONS)
+                }
+
+                val permissionsState = rememberMultiplePermissionsState(permissions = permissionsList)
                 
-                LaunchedEffect(micPermissionState.status.isGranted) {
-                    if (micPermissionState.status.isGranted) {
+                LaunchedEffect(permissionsState.allPermissionsGranted) {
+                    if (permissionsState.allPermissionsGranted) {
                         viewModel.initializeSpeech()
                     }
                 }
 
                 LaunchedEffect(Unit) {
-                    if (!micPermissionState.status.isGranted) {
-                        micPermissionState.launchPermissionRequest()
+                    if (!permissionsState.allPermissionsGranted) {
+                        permissionsState.launchMultiplePermissionRequest()
                     }
                 }
 

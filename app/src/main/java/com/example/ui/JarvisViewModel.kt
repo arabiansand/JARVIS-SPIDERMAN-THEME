@@ -64,6 +64,20 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
             initialValue = AppTheme.MIDNIGHT_BLUE
         )
 
+    val isHotwordEnabled: StateFlow<Boolean> = themeRepository.hotwordFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
+    val isBackgroundServiceEnabled: StateFlow<Boolean> = themeRepository.backgroundServiceFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     private val commandRouter = CommandRouter(application)
     
     private val _aiResponse = MutableStateFlow("")
@@ -81,9 +95,41 @@ class JarvisViewModel(application: Application) : AndroidViewModel(application) 
     val jarvisState: StateFlow<JarvisState> = voiceManager.jarvisState
     val spokenText: StateFlow<String> = voiceManager.spokenText
 
+    init {
+        viewModelScope.launch {
+            isHotwordEnabled.collect { enabled ->
+                voiceManager.setHotwordEnabled(enabled)
+            }
+        }
+        viewModelScope.launch {
+            isBackgroundServiceEnabled.collect { enabled ->
+                if (enabled) {
+                    com.example.service.JarvisHotwordService.start(application)
+                } else {
+                    com.example.service.JarvisHotwordService.stop(application)
+                }
+            }
+        }
+    }
+
     fun setTheme(theme: AppTheme) {
         viewModelScope.launch {
             themeRepository.setTheme(theme)
+        }
+    }
+
+    fun toggleHotwordMode() {
+        viewModelScope.launch {
+            val nextState = !isHotwordEnabled.value
+            themeRepository.setHotwordEnabled(nextState)
+            voiceManager.setHotwordEnabled(nextState)
+        }
+    }
+
+    fun toggleBackgroundService() {
+        viewModelScope.launch {
+            val nextState = !isBackgroundServiceEnabled.value
+            themeRepository.setBackgroundServiceEnabled(nextState)
         }
     }
 

@@ -36,7 +36,11 @@ import com.example.ui.theme.TextSecondary
 @Composable
 fun SettingsScreen(
     currentTheme: AppTheme = AppTheme.MIDNIGHT_BLUE,
+    isHotwordEnabled: Boolean = true,
+    isBackgroundServiceEnabled: Boolean = false,
     onThemeSelected: (AppTheme) -> Unit = {},
+    onToggleHotword: () -> Unit = {},
+    onToggleBackgroundService: () -> Unit = {},
     onBack: () -> Unit
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
@@ -72,6 +76,105 @@ fun SettingsScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // VOICE ACTIVATION & HOTWORD TRIGGER
+                Text(
+                    text = "VOICE TRIGGER & HOTWORD DETECTION",
+                    color = primaryColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+
+                // Hotword Toggle Card
+                GlassmorphicPanel(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    blurRadius = 18.dp,
+                    accentColor = if (isHotwordEnabled) primaryColor else primaryColor.copy(alpha = 0.3f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Wake Word: \"Hey JARVIS\"",
+                                color = TextPrimary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Enables continuous hands-free voice trigger when app is open. Trigger phrases: 'Hey JARVIS', 'Okay JARVIS', or 'JARVIS'.",
+                                color = TextSecondary,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Switch(
+                            checked = isHotwordEnabled,
+                            onCheckedChange = { onToggleHotword() },
+                            modifier = Modifier.testTag("hotword_switch"),
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = primaryColor,
+                                checkedTrackColor = primaryColor.copy(alpha = 0.3f),
+                                uncheckedThumbColor = Color.Gray,
+                                uncheckedTrackColor = Color.DarkGray
+                            )
+                        )
+                    }
+                }
+
+                // Persistent Background Microphone Service Toggle Card
+                GlassmorphicPanel(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    blurRadius = 18.dp,
+                    accentColor = if (isBackgroundServiceEnabled) primaryColor else primaryColor.copy(alpha = 0.3f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Background Voice Monitor Service",
+                                color = TextPrimary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Runs a foreground service notification to keep JARVIS hotword detector alive when app is in the background.",
+                                color = TextSecondary,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Switch(
+                            checked = isBackgroundServiceEnabled,
+                            onCheckedChange = { onToggleBackgroundService() },
+                            modifier = Modifier.testTag("background_service_switch"),
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = primaryColor,
+                                checkedTrackColor = primaryColor.copy(alpha = 0.3f),
+                                uncheckedThumbColor = Color.Gray,
+                                uncheckedTrackColor = Color.DarkGray
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
                 // THEME SELECTOR SECTION
                 Text(
                     text = "HUD THEME PREFERENCE",

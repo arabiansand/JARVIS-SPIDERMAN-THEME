@@ -24,6 +24,8 @@ fun JarvisNavGraph(viewModel: JarvisViewModel = viewModel()) {
     val memories by viewModel.memory.collectAsState(initial = emptyList())
     val currentTheme by viewModel.currentTheme.collectAsState()
     val networkStatus by viewModel.networkStatus.collectAsState()
+    val isHotwordEnabled by viewModel.isHotwordEnabled.collectAsState()
+    val isBackgroundServiceEnabled by viewModel.isBackgroundServiceEnabled.collectAsState()
     
     val visionModeEnabled by viewModel.visionModeEnabled.collectAsState()
     val captureTrigger by viewModel.captureTrigger.collectAsState()
@@ -44,7 +46,9 @@ fun JarvisNavGraph(viewModel: JarvisViewModel = viewModel()) {
                 aiResponse = aiResponse,
                 visionModeEnabled = visionModeEnabled,
                 cameraController = cameraController,
+                isHotwordEnabled = isHotwordEnabled,
                 onToggleVisionMode = { viewModel.toggleVisionMode() },
+                onToggleHotwordMode = { viewModel.toggleHotwordMode() },
                 onMicClick = { viewModel.startListening() },
                 onOpenCommandCenter = { navController.navigate("command_center") }
             )
@@ -63,7 +67,11 @@ fun JarvisNavGraph(viewModel: JarvisViewModel = viewModel()) {
         composable("settings") {
             SettingsScreen(
                 currentTheme = currentTheme,
+                isHotwordEnabled = isHotwordEnabled,
+                isBackgroundServiceEnabled = isBackgroundServiceEnabled,
                 onThemeSelected = { viewModel.setTheme(it) },
+                onToggleHotword = { viewModel.toggleHotwordMode() },
+                onToggleBackgroundService = { viewModel.toggleBackgroundService() },
                 onBack = { navController.popBackStack() }
             )
         }

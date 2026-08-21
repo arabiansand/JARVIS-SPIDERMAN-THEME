@@ -55,7 +55,9 @@ fun HudScreen(
     aiResponse: String,
     visionModeEnabled: Boolean = false,
     cameraController: LifecycleCameraController? = null,
+    isHotwordEnabled: Boolean = true,
     onToggleVisionMode: () -> Unit = {},
+    onToggleHotwordMode: () -> Unit = {},
     onMicClick: () -> Unit,
     onOpenCommandCenter: () -> Unit
 ) {
@@ -72,6 +74,7 @@ fun HudScreen(
             JarvisState.ERROR -> secondaryColor
             JarvisState.SPEAKING -> primaryColor
             JarvisState.THINKING -> tertiaryColor
+            JarvisState.HOTWORD_STANDBY -> primaryColor
             else -> primaryColor
         },
         label = "activeAccent"
@@ -126,20 +129,34 @@ fun HudScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "JARVIS: ${jarvisState.name}",
+                            "JARVIS: ${jarvisState.name.replace('_', ' ')}",
                             color = activeAccentColor,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         )
                     }
-                    Text(
-                        "SYSTEM: ONLINE",
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 1.sp
-                    )
+                    
+                    // Hotword Wake Trigger Status Indicator
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.testTag("hotword_status_indicator")
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(if (isHotwordEnabled) primaryColor else Color.Gray)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            if (isHotwordEnabled) "WAKE: 'HEY JARVIS'" else "WAKE: OFF",
+                            color = if (isHotwordEnabled) Color.White.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.4f),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
                 }
             }
             
@@ -180,7 +197,7 @@ fun HudScreen(
                 ) {
                     if (spokenText.isEmpty() && aiResponse.isEmpty()) {
                         Text(
-                            "Tap the microphone or say \"Hey JARVIS\"",
+                            if (isHotwordEnabled) "Say \"Hey JARVIS\" or tap the microphone" else "Tap the microphone to speak",
                             color = Color.White.copy(alpha = 0.5f),
                             fontSize = 13.sp,
                             letterSpacing = 0.5.sp
@@ -245,9 +262,28 @@ fun HudScreen(
                     }
                     
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Hands-Free Hotword Mode Toggle FAB
+                        FloatingActionButton(
+                            onClick = onToggleHotwordMode,
+                            containerColor = if (isHotwordEnabled) primaryColor.copy(alpha = 0.2f) else backgroundColor,
+                            contentColor = if (isHotwordEnabled) primaryColor else Color.Gray,
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(50.dp)
+                                .testTag("hotword_toggle_button")
+                        ) {
+                            Text(
+                                "WAKE",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isHotwordEnabled) primaryColor else Color.Gray
+                            )
+                        }
+
+                        // Vision Mode Toggle FAB
                         FloatingActionButton(
                             onClick = {
                                 if (!cameraPermissionState.status.isGranted) {
@@ -258,28 +294,31 @@ fun HudScreen(
                             containerColor = if (visionModeEnabled) secondaryColor else backgroundColor,
                             contentColor = if (visionModeEnabled) backgroundColor else primaryColor,
                             shape = CircleShape,
-                            modifier = Modifier.size(56.dp)
+                            modifier = Modifier
+                                .size(50.dp)
+                                .testTag("vision_toggle_button")
                         ) {
                             Icon(
                                 if (visionModeEnabled) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                                 contentDescription = "Toggle Vision",
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     
+                        // Manual Push-to-Talk Mic FAB
                         FloatingActionButton(
                             onClick = onMicClick,
                             containerColor = if (jarvisState == JarvisState.LISTENING) secondaryColor else primaryColor,
                             shape = CircleShape,
                             modifier = Modifier
-                                .size(64.dp)
+                                .size(60.dp)
                                 .testTag("mic_fab_button")
                         ) {
                             Icon(
                                 Icons.Filled.Mic,
                                 contentDescription = "Listen",
                                 tint = backgroundColor,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(30.dp)
                             )
                         }
                     }

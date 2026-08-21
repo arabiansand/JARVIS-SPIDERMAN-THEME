@@ -108,7 +108,7 @@ fun FuturisticParticleBackground(
             p.phase += 0.03f
 
             when (jarvisState) {
-                JarvisState.IDLE -> {
+                JarvisState.IDLE, JarvisState.HOTWORD_STANDBY -> {
                     // Gentle ambient Brownian drift & breathing pulsation
                     p.x += p.vx
                     p.y += p.vy
@@ -119,7 +119,8 @@ fun FuturisticParticleBackground(
                     if (p.y < 0) p.y = height
                     if (p.y > height) p.y = 0f
 
-                    p.alpha = p.baseAlpha * (0.6f + 0.4f * sin(p.phase))
+                    val pulseFactor = if (jarvisState == JarvisState.HOTWORD_STANDBY) 1.2f else 1.0f
+                    p.alpha = (p.baseAlpha * (0.6f + 0.4f * sin(p.phase)) * pulseFactor).coerceIn(0.1f, 1f)
                     p.radius = p.baseRadius * (0.8f + 0.2f * sin(p.phase * 1.5f))
                 }
 
@@ -198,8 +199,8 @@ fun FuturisticParticleBackground(
             }
         }
 
-        // Draw Constellation Interconnection Laser Lines in IDLE / THINKING modes
-        if (jarvisState == JarvisState.IDLE || jarvisState == JarvisState.THINKING) {
+        // Draw Constellation Interconnection Laser Lines in IDLE / HOTWORD_STANDBY / THINKING modes
+        if (jarvisState == JarvisState.IDLE || jarvisState == JarvisState.HOTWORD_STANDBY || jarvisState == JarvisState.THINKING) {
             val maxLinkDist = 95.dp.toPx()
             for (i in 0 until particles.size) {
                 val p1 = particles[i]
